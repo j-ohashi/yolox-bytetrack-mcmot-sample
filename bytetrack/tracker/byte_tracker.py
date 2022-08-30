@@ -299,8 +299,124 @@ class BYTETracker(object):
             track for track in self.tracked_stracks if track.is_activated
         ]
 
-        return output_stracks
+        # save STrack data
+        last_stracks = {'tracked_stracks': [], 'lost_stracks': [], 'removed_stracks': []}
 
+        for track in self.tracked_stracks:
+            last_stracks['tracked_stracks'].append({
+                '_tlwh': track._tlwh,
+                'mean': track.mean,
+                'covariance': track.covariance,
+                'is_activated': track.is_activated,
+                'score': track.score,
+                'tracklet_len': track.tracklet_len,
+                'state': track.state,
+                'track_id': track.track_id,
+                'frame_id': track.frame_id,
+                'start_frame': track.start_frame,
+            })
+
+        for track in self.lost_stracks:
+            last_stracks['lost_stracks'].append({
+                '_tlwh': track._tlwh,
+                'mean': track.mean,
+                'covariance': track.covariance,
+                'is_activated': track.is_activated,
+                'score': track.score,
+                'tracklet_len': track.tracklet_len,
+                'state': track.state,
+                'track_id': track.track_id,
+                'frame_id': track.frame_id,
+                'start_frame': track.start_frame,
+            })
+
+        for track in self.removed_stracks:
+            last_stracks['removed_stracks'].append({
+                '_tlwh': track._tlwh,
+                'mean': track.mean,
+                'covariance': track.covariance,
+                'is_activated': track.is_activated,
+                'score': track.score,
+                'tracklet_len': track.tracklet_len,
+                'state': track.state,
+                'track_id': track.track_id,
+                'frame_id': track.frame_id,
+                'start_frame': track.start_frame,
+            })
+
+        return output_stracks, last_stracks
+
+    # restore saved STrack data
+    def restore_stracks(self, valiables):
+        max_frame_id = 0
+
+        for t in valiables['tracked_stracks']:
+            track = STrack(STrack.tlbr_to_tlwh([0., 0., 0., 0.]), 0)
+            
+            track._tlwh = t['_tlwh']
+            if t['is_activated']:
+                track.activate(self.kalman_filter, t['frame_id'])
+            
+            track.mean = t['mean']
+            track.covariance = t['covariance']
+            track.is_activated = t['is_activated']
+            track.score = t['score']
+            track.tracklet_len = t['tracklet_len']
+            track.state = t['state']
+            track.track_id = t['track_id']
+            track.frame_id = t['frame_id']
+            track.start_frame = t['start_frame']
+
+            self.tracked_stracks.append(track)
+
+            if t['frame_id'] > max_frame_id:
+                max_frame_id = t['frame_id']
+
+        for t in valiables['lost_stracks']:
+            track = STrack(STrack.tlbr_to_tlwh([0., 0., 0., 0.]), 0)
+            
+            track._tlwh = t['_tlwh']
+            if t['is_activated']:
+                track.activate(self.kalman_filter, t['frame_id'])
+
+            track.mean = t['mean']
+            track.covariance = t['covariance']
+            track.is_activated = t['is_activated']
+            track.score = t['score']
+            track.tracklet_len = t['tracklet_len']
+            track.state = t['state']
+            track.track_id = t['track_id']
+            track.frame_id = t['frame_id']
+            track.start_frame = t['start_frame']
+
+            self.lost_stracks.append(track)
+
+            if t['frame_id'] > max_frame_id:
+                max_frame_id = t['frame_id']
+
+        for t in valiables['removed_stracks']:
+            track = STrack(STrack.tlbr_to_tlwh([0., 0., 0., 0.]), 0)
+            
+            track._tlwh = t['_tlwh']
+            if t['is_activated']:
+                track.activate(self.kalman_filter, t['frame_id'])
+
+            track.mean = t['mean']
+            track.covariance = t['covariance']
+            track.is_activated = t['is_activated']
+            track.score = t['score']
+            track.tracklet_len = t['tracklet_len']
+            track.state = t['state']
+            track.track_id = t['track_id']
+            track.frame_id = t['frame_id']
+            track.start_frame = t['start_frame']
+
+            self.removed_stracks.append(track)
+
+            if t['frame_id'] > max_frame_id:
+                max_frame_id = t['frame_id']
+
+        self.frame_id = max_frame_id
 
 def joint_stracks(tlista, tlistb):
     exists = {}
