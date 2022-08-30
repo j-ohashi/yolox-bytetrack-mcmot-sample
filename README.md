@@ -31,6 +31,13 @@ python sample.py
 * --height<br>
 カメラキャプチャ時の縦幅<br>
 デフォルト：540
+  
+* --save_result<br>
+実行後にトラッキングデータを保存するか否か(動画ファイルでの実行時のみ有効)<br>
+デフォルト：指定なし
+* --prevdata<br>
+保存したトラッキングデータを読み込む場合は読み込むnpyファイル名<br>
+デフォルト：指定なし
 <details>
 <summary>YOLOXパラメータ</summary>
   

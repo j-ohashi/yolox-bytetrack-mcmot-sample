@@ -6,6 +6,7 @@ import argparse
 
 import cv2
 import numpy as np
+import os
 
 from yolox.yolox_onnx import YoloxONNX
 from bytetrack.mc_bytetrack import MultiClassByteTrack
@@ -81,6 +82,13 @@ def get_args():
         action="store_true",
     )
 
+    # saved track data file parameters
+    parser.add_argument("--prevdata", type=str, default=None)
+    parser.add_argument(
+        "--save_result",
+        action="store_true",
+    )
+
     args = parser.parse_args()
 
     return args
@@ -147,6 +155,21 @@ def main():
     # トラッキングID保持用変数
     track_id_dict = {}
 
+    # 前回実行時の途中データがある場合は読み込み
+    if args.prevdata is not None:
+        last_tracks = load_prev_tracks(args.prevdata)
+
+        if isinstance(last_tracks, dict):
+            try:
+                track_id_dict = last_tracks['track_id_dict']
+                restore_data = last_tracks['tracker_data']
+
+                # trackerの変数にデータを戻す
+                tracker.tracked_stracks_dict = restore_data
+            except:
+                # 取得したデータの中に必要な要素がない
+                pass
+
     # COCOクラスリスト読み込み
     with open('coco_classes.txt', 'rt') as f:
         coco_classes = f.read().rstrip('\n').split('\n')
@@ -201,6 +224,13 @@ def main():
         # 画面反映 #########################################################
         cv2.imshow('YOLOX ByteTrack(Multi Class) Sample', debug_image)
 
+    if args.movie is not None and args.save_result:
+        savedict = {
+            'track_id_dict': track_id_dict,
+            'tracker_data': tracker.tracked_stracks_dict,
+        }
+        save_last_tracks(args.movie, savedict)
+    
     cap.release()
     cv2.destroyAllWindows()
 
@@ -282,6 +312,19 @@ def draw_debug(
 
     return debug_image
 
+def save_last_tracks(movie, last_tracks):
+    savefile_path = os.path.splitext(movie)[0] + '.npy'
+    np.save(savefile_path, last_tracks)
+    os.chmod(savefile_path, 0o666)
+
+def load_prev_tracks(filename = None):
+    if filename is not None and filename.endswith('.npy') and os.path.exists(filename):
+        last_tracks = np.load(filename, allow_pickle=True)
+
+        if last_tracks is not None:
+            return last_tracks.item()
+
+    return {}
 
 if __name__ == '__main__':
     main()
